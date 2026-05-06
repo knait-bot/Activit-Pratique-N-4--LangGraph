@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "basic_demo": "./langgraph_rag/simple_graph.py:graph",
+    "agentic_rag": "./langgraph_rag/agent.py:graph"
+  },
+  "env": "./.env"
+}

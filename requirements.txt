@@ -1,0 +1,8 @@
+langgraph>=1.0.0
+langchain>=1.0.0
+langchain-openai>=1.0.0
+langchain-core>=1.0.0
+langgraph-cli[inmem]>=0.4.0
+python-dotenv>=1.0.1
+streamlit>=1.36.0
+typing-extensions>=4.12.0

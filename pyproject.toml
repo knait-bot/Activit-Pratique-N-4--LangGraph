@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tp4-langgraph-agentic-rag"
+version = "0.1.0"
+description = "TP4 LangGraph basics and Agentic RAG chatbot with Streamlit"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=1.0.0",
+    "langchain>=1.0.0",
+    "langchain-openai>=1.0.0",
+    "langchain-core>=1.0.0",
+    "python-dotenv>=1.0.1",
+    "streamlit>=1.36.0",
+    "typing-extensions>=4.12.0"
+]
+
+[tool.setuptools.packages.find]
+include = ["langgraph_rag*"]
+
+[tool.setuptools.package-data]
+langgraph_rag = ["knowledge_base.md"]
