@@ -10,7 +10,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph_rag.retriever import RetrievedDocument, retrieve_documents
 
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 class AgenticRagState(TypedDict, total=False):
@@ -56,11 +56,14 @@ def _get_llm():
 
     from langchain_openai import ChatOpenAI
 
-    return ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
-        temperature=0,
-        api_key=api_key,
-    )
+    try:
+        return ChatOpenAI(
+            model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+            temperature=0,
+            api_key=api_key,
+        )
+    except Exception:
+        return None
 
 
 def route_question(state: AgenticRagState) -> dict:
@@ -146,31 +149,41 @@ def _extractive_answer(question: str, documents: list[dict]) -> str:
 
 def generate_answer(state: AgenticRagState) -> dict:
     documents = state.get("documents", [])
-    context = "\n\n".join(
-        f"Source: {doc['title']}\nScore: {doc['score']}\n{doc['content']}" for doc in documents
-    )
-    llm = _get_llm()
-
-    if llm and documents:
-        response = llm.invoke(
-            [
-                SystemMessage(
-                    content=(
-                        "Tu es un assistant RAG. Reponds en francais, uniquement avec le "
-                        "contexte fourni. Cite les titres des sources utilisees. Si le "
-                        "contexte est insuffisant, dis-le clairement."
-                    )
-                ),
-                HumanMessage(content=f"Question: {state['question']}\n\nContexte:\n{context}"),
-            ]
+    try:
+        context = "\n\n".join(
+            f"Source: {doc['title']}\nScore: {doc['score']}\n{doc['content']}" for doc in documents
         )
-        answer = response.content
-    else:
-        answer = _extractive_answer(state["question"], documents)
+        llm = _get_llm()
+
+        if llm and documents:
+            try:
+                response = llm.invoke(
+                    [
+                        SystemMessage(
+                            content=(
+                                "Tu es un assistant RAG. Reponds en francais, uniquement avec le "
+                                "contexte fourni. Cite les titres des sources utilisees. Si le "
+                                "contexte est insuffisant, dis-le clairement."
+                            )
+                        ),
+                        HumanMessage(content=f"Question: {state['question']}\n\nContexte:\n{context}"),
+                    ]
+                )
+                answer = response.content
+                step = "generate_answer: reponse produite via LLM"
+            except BaseException as exc:
+                answer = _extractive_answer(state["question"], documents)
+                step = f"generate_answer: fallback local ({exc.__class__.__name__})"
+        else:
+            answer = _extractive_answer(state["question"], documents)
+            step = "generate_answer: reponse extractive locale"
+    except BaseException as exc:
+        answer = _extractive_answer(state.get("question", ""), documents)
+        step = f"generate_answer: emergency fallback ({exc.__class__.__name__})"
 
     return {
         "answer": answer,
-        "steps": _append_step(state, "generate_answer: reponse produite"),
+        "steps": _append_step(state, step),
     }
 
 
